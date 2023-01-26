@@ -2,6 +2,9 @@ package com.avangers.studentManagement;
 
 
 import jakarta.websocket.server.PathParam;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.service.annotation.DeleteExchange;
 
@@ -13,37 +16,41 @@ import static javax.swing.UIManager.get;
 @RestController
 public class StudentController {
 
-   Map<Integer,Student> db = new HashMap<>();
+  @Autowired
+  StudentService studentServiceRes;
 
    //getting the information
     @GetMapping("/get_student")
-    public Student getStudent(@RequestParam("r") int admnNo){
-        return db.get(admnNo);
+    public ResponseEntity getStudent(@RequestParam("admnNo") int admnNo){
+        Student student = studentServiceRes.getStudent(admnNo);
+        return new ResponseEntity<>(student, HttpStatus.FOUND);
     }
 
    //adding the information
     @PostMapping("/add_student")
-    public String addStudent(@RequestBody Student student){
-        int admnNo = student.getAdmnNo();
-        db.put(admnNo,student);
+    public ResponseEntity addStudent(@RequestBody Student student){
+        String response = studentServiceRes.addStudent(student);
+        return new ResponseEntity<>(response ,HttpStatus.CREATED);
 
-        return "congrats you have been added to the list";
     }
 
     //deleting student
     @DeleteMapping("/delete_student")
-    public String deleteStudent(@RequestParam("q") int admnNo){
-        db.remove(admnNo);
-        return "student is deleted successfully";
+    public ResponseEntity deleteStudent(@RequestParam("q") int id){
+        String response = studentServiceRes.deleteStudent(id);
+        if(response.equals("Invalid id")) {
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>(response,HttpStatus.FOUND);
     }
 
     //updating the information
-    @PutMapping("/update_student/{admnNo}")
-    public String updateStudent(@PathVariable int admnNo, @RequestBody Student student) {
-        student.setAge(student.getAge());
-        student.setName(student.getName());
-        student.setState(student.getState());
-        db.put(admnNo,student);
-        return "student updated successfully";
+    @PutMapping("/update_student")
+    public ResponseEntity updateStudent(@RequestParam("id") int id , @RequestParam("age") int age){
+        String response = studentServiceRes.updateStudent(id,age);
+        if(response==null){
+            return new ResponseEntity("invalid id" , HttpStatus.BAD_REQUEST);
+        }
+        return new ResponseEntity("valid" , HttpStatus.ACCEPTED);
     }
 }
